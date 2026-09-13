@@ -29,22 +29,6 @@ const app = new Hono<{
 
 app.all('*', renderer)
 
-app.get('/:key{[a-zA-Z0-9_-]+}', async (c) => {
-  const key = c.req.param('key')
-
-  if (RESERVED_KEYS.has(key.toLowerCase())) {
-    return c.redirect('/')
-  }
-
-  const url = await c.env.KV.get(key)
-
-  if (url === null) {
-    return c.redirect('/')
-  }
-
-  return c.redirect(url)
-})
-
 app.get('/', (c) => {
   const redirectUrl = c.env.ROOT_REDIRECT_URL
   if (redirectUrl) {
@@ -88,6 +72,22 @@ app.get('/admin', (c) => {
       </form>
     </div>
   )
+})
+
+app.get('/:key{[a-zA-Z0-9_-]+}', async (c) => {
+  const key = c.req.param('key')
+
+  if (RESERVED_KEYS.has(key.toLowerCase())) {
+    return c.redirect('/')
+  }
+
+  const url = await c.env.KV.get(key)
+
+  if (url === null) {
+    return c.redirect('/')
+  }
+
+  return c.redirect(url)
 })
 
 const schema = z.object({
