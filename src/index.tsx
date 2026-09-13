@@ -75,9 +75,9 @@ app.get('/admin', (c) => {
 })
 
 app.get('/:key{[a-zA-Z0-9_-]+}', async (c) => {
-  const key = c.req.param('key')
+  const key = c.req.param('key').toLowerCase()
 
-  if (RESERVED_KEYS.has(key.toLowerCase())) {
+  if (RESERVED_KEYS.has(key)) {
     return c.redirect('/')
   }
 
@@ -91,7 +91,15 @@ app.get('/:key{[a-zA-Z0-9_-]+}', async (c) => {
 })
 
 const schema = z.object({
-  url: z.string().url(),
+  url: z
+    .string()
+    .url()
+    .refine(
+      (val) => /^https?:\/\//i.test(val),
+      {
+        message: 'URL must start with http:// or https://'
+      }
+    ),
   key: z.string().regex(/^[a-zA-Z0-9_-]*$/).optional()
 })
 
@@ -118,18 +126,19 @@ const createKey = async (
   customKey?: string
 ): Promise<CreateKeyResult> => {
   if (customKey) {
-    if (!isValidKey(customKey)) {
+    const normalizedKey = customKey.toLowerCase()
+    if (!isValidKey(normalizedKey)) {
       return {
-        key: customKey,
+        key: normalizedKey,
         error: 'This path is reserved or contains invalid characters.'
       }
     }
-    const existing = await kv.get(customKey)
+    const existing = await kv.get(normalizedKey)
     if (existing !== null) {
-      return { key: customKey, error: 'This path is already in use.' }
+      return { key: normalizedKey, error: 'This path is already in use.' }
     }
-    await kv.put(customKey, url)
-    return { key: customKey }
+    await kv.put(normalizedKey, url)
+    return { key: normalizedKey }
   }
 
   const uuid = crypto.randomUUID()
