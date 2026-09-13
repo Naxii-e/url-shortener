@@ -6,6 +6,7 @@ import { zValidator } from '@hono/zod-validator'
 
 type Bindings = {
   KV: KVNamespace
+  ROOT_REDIRECT_URL?: string
 }
 
 const RESERVED_KEYS = new Set([
@@ -45,27 +46,11 @@ app.get('/:key{[a-zA-Z0-9_-]+}', async (c) => {
 })
 
 app.get('/', (c) => {
-  return c.render(
-    <div>
-      <h2>Create shorten URL!</h2>
-      <form action="/create" method="post">
-        <input
-          type="text"
-          name="url"
-          autocomplete="off"
-          placeholder="https://example.com"
-          style={{
-            width: '80%'
-          }}
-        />
-        &nbsp;
-        <button type="submit">Create</button>
-      </form>
-      <p>
-        <a href="/admin">Admin</a>
-      </p>
-    </div>
-  )
+  const redirectUrl = c.env.ROOT_REDIRECT_URL
+  if (redirectUrl) {
+    return c.redirect(redirectUrl)
+  }
+  return c.redirect('/admin')
 })
 
 app.get('/admin', (c) => {
@@ -101,9 +86,6 @@ app.get('/admin', (c) => {
         </p>
         <button type="submit">Create</button>
       </form>
-      <p>
-        <a href="/">Back to top</a>
-      </p>
     </div>
   )
 })
